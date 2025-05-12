@@ -32,6 +32,36 @@ with pm.Model() as cct_model:
                         target_accept=0.9,
                         return_inferencedata=True)
     
+    #1. summarize samples
+    summary = az.summary(trace, var_names=['D', 'Z'])
+    print(summary)
+
+    #2. estimate informant competence
+    competence_means = trace.posterior['D'].mean(dim=['chain', 'draw']).values
+    #plot competence_means
+    az.plot_posterior(trace, var_names=['D'])
+
+    most_competent = np.argmax(competence_means)
+    least_competent = np.argmin(competence_means)
+
+    print(f'\nMost competent Informant: {most_competent+1}')
+    print(f'Least competent Informant: {least_competent+1}\n')
+
+    #3. estimate concensus answers
+    Z_means = trace.posterior['Z'].mean(dim=['chain', 'draw']).values
+    Z_mode = (Z_means > 0.5).astype(int)
+
+    print(f'Posterior mean probabilty for Zj: {Z_means}')
+    print(f'Most likely concensus answer key(Mode): {Z_mode}\n')
+
+    az.plot_posterior(trace, var_names=['Z'])
+
+    #4. Compare with Naive Aggregation
+    majority_vote = (np.mean(data, axis=0) > 0.5).astype(int)
+
+    print(f'Naive majority vote answer key: {majority_vote}')
+    print(f'CCT concensus answer key: {Z_mode}')
+    
 
 
 
